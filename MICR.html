@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>scanning</title>
+<script type="text/javascript" src="Resources/dynamsoft.webtwain.initiate.js"></script>
+<script type="text/javascript" src="Resources/dynamsoft.webtwain.config.js"></script>
+<meta charset="utf-8" />
+</head>
+<body><br />
+    <select size="1" id="source" style="position: relative; width: 220px;"></select>
+    <div id="dwtcontrolContainer"></div>
+    <input type="button" value="Scan" onclick="AcquireImage();"/><br>
+    MICR value: <input id="MICRVALUE" type="text" name="MICRVALUE" ><br>
+    MICR type: <input id="MICRTYPE" type="text" name="MICRTYPE" >
+    <script type="text/javascript">
+Dynamsoft.WebTwainEnv.RegisterEvent('OnWebTwainReady', Dynamsoft_OnReady);
+        var DWObject;
+        function Dynamsoft_OnReady() {
+            DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');		  
+            if (DWObject) {              
+				DWObject.IfUseTWAINDSM = true;
+                var count = DWObject.SourceCount;
+                for (var i = 0; i < count; i++) {
+                    document.getElementById("source").options.add(new Option(DWObject.GetSourceNameItems(i), i));
+                }
+				
+              DWObject.RegisterEvent('OnPostTransfer', function () {
+                    document.getElementById('MICRVALUE').value = DWObject.MagData;
+					document.getElementById('MICRTYPE').value = DWObject.MagType;
+					DWObject.CloseSource();
+                });
+            }
+        }
+
+        function AcquireImage() {
+            if (DWObject) {
+                var OnAcquireImageSuccess, OnAcquireImageFailure;
+                console.log("1:" + DWObject);
+                DWObject.SelectSourceByIndex(document.getElementById("source").selectedIndex);
+                DWObject.OpenSource();
+                DWObject.IfShowUI = true;
+               // DWObject.IfDisableSourceAfterAcquire = false;
+                DWObject.Capability = EnumDWT_Cap.CAP_MICRENABLED;
+                DWObject.CapGet();
+                var tempvalue = '';
+                DWObject.CapValueType > 8 ?
+                tempvalue = DWObject.CapValueString : tempvalue = DWObject.CapValue;
+                if (DWObject.CapValueType == EnumDWT_CapValueType.TWTY_BOOL) {             
+                    tempvalue == 0 ? tempvalue = 'FALSE' : tempvalue = 'TRUE';
+                }              
+                DWObject.CapType = EnumDWT_CapType.TWON_ONEVALUE;
+                DWObject.CapValue = 1;
+                DWObject.CapSet();
+                DWObject.AcquireImage();
+            }
+        }
+    </script>
+</body>
+</html>
